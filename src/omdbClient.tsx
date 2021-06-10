@@ -22,16 +22,16 @@ interface SearchParameters {
 }
 
 export interface DetailMovie {
-  imdbID?: string,
-  Poster?: string,
-  Title?: string,
-  Type?: string,
-  Year?: number,
-  Released?: number,
-  Genre?: string,
-  Ratings?: [ { Source: string, Value: string } ],
+  imdbID: string,
+  Poster: string,
+  Title: string,
+  Type: string,
+  Year: number,
+  Released: number,
+  Genre: string,
+  Ratings: [ { Source: string, Value: string } ],
   Error?: string,
-  Response: string,
+  Response: string
 }
 
 export const search = async (parameters: SearchParameters) => {

@@ -12,5 +12,6 @@ test('renders', async () => {
       <App />
     </MemoryRouter>
   )
+
   expect(await screen.findByText('The Monkey King Havoc in Heavens Palace')).toBeInTheDocument()
 });
