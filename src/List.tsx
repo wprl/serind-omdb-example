@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 
+const noPosterImageUrl = ''
 const omdbApiKey = 'c4de1ece'
 const omdbSearchUrl = `http://www.omdbapi.com/`
 
 interface ImdbData {
   imdbID: string,
+  Poster: string,
   Title: string,
+  Type: string,
   Year: number
 }
 
@@ -16,26 +19,19 @@ interface ImdbResponse {
 }
 
 export default function List() {
-  const buildSearchUrl = () => {
-    const url = new URL(omdbSearchUrl)
-    url.search = new URLSearchParams({
-      apikey: omdbApiKey,
-      s: title
-      // year, type
-    }).toString()
-
-    return url.toString()
-  }
-
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState<Array<ImdbData>>([]);
-  const [title, setTitle] = useState('Monkey King');
-  const [type, setType] = useState('');
-  const [year, setYear] = useState('');
-  const [searchUrl, setSearchUrl] = useState(buildSearchUrl());
+  const [searchUrl, setSearchUrl] = useState('');
 
   useEffect(() => {
+    if (!searchUrl) {
+      setIsLoaded(true);
+      setErrorMessage('');
+      setItems([]);
+      return;
+    }
+
     fetch(searchUrl)
       .then((response) => {
         if (!response.ok) {
@@ -63,42 +59,71 @@ export default function List() {
         (error) => {
           setIsLoaded(true);
           setErrorMessage(error.message);
+          setItems([]);
         }
       )
   }, [searchUrl])
 
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState('');
+  const [year, setYear] = useState('');
+
+  const buildSearchUrl = () => {
+    const trimmedTitle = title.trim()
+
+    if (!trimmedTitle) return ''
+
+    const url = new URL(omdbSearchUrl)
+    url.searchParams.append('apikey', omdbApiKey)
+    url.searchParams.append('s', trimmedTitle)
+
+    if (year) url.searchParams.append('y', year)
+    if (type) url.searchParams.append('type', type)
+
+    return url.toString()
+  }
+
   return (
     <div>
-      <label>
-        Title:
-        <input
-          type="text"
-          onChange={(e) => setTitle(e.target.value)}
-          value={title}
-        />
-      </label>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          setSearchUrl(buildSearchUrl())
+        }}>
+        <label>
+          Title:
+          <input
+            type="text"
+            minLength={1}
+            onChange={(e) => setTitle(e.target.value)}
+            required={true}
+            value={title}
+          />
+        </label>
 
-      <label>
-        Type:
-        <input
-          type="text"
-          onChange={(e) => setType(e.target.value)}
-          value={type}
-        />
-      </label>
+        <label>
+          Type:
+          <select value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="">Any</option>
+            <option value="movie">Movie</option>
+            <option value="series">Series</option>
+            <option value="episode">Episode</option>
+          </select>
+        </label>
 
-      <label>
-        Year:
-        <input
-          type="text"
-          onChange={(e) => setYear(e.target.value)}
-          value={year}
-        />
-      </label>
+        <label>
+          Year:
+          <input
+            type="number"
+            max={(new Date()).getFullYear()}
+            min={1888}
+            onChange={(e) => setYear(e.target.value)}
+            value={year}
+          />
+        </label>
 
-      <button onClick={() => setSearchUrl(buildSearchUrl())}>
-        Search
-      </button>
+        <input type="submit" value="Search" />
+      </form>
 
       {!isLoaded && (
         <div>Loading...</div>
@@ -108,13 +133,23 @@ export default function List() {
         <div>Error: {errorMessage}</div>
       )}
 
-      <ul>
-        {items.map(item => (
-          <li key={item.imdbID}>
-            {item.Title} ({item.Year})
-          </li>
-        ))}
-      </ul>
+      <table>
+        <tbody>
+          {items.map(item => (
+            <tr key={item.imdbID}>
+              <td>
+                <img
+                  alt={'Poster image for ' + item.Title}
+                  width="100px"
+                  src={item.Poster || noPosterImageUrl} />
+              </td>
+              <td>{item.Title}</td>
+              <td>{item.Type}</td>
+              <td>{item.Year}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
