@@ -18,83 +18,79 @@ interface ImdbResponse {
   Search: Array<ImdbData>
 }
 
+interface SearchParameters {
+  title: string,
+  type: string,
+  year: string
+}
+
+
+const search = async (parameters: SearchParameters) => {
+  const {title, year, type} = parameters
+  const trimmedTitle = title.trim()
+
+  if (!trimmedTitle) {
+    return []
+  }
+
+  const url = new URL(omdbSearchUrl)
+  url.searchParams.append('apikey', omdbApiKey)
+  url.searchParams.append('s', trimmedTitle)
+
+  if (year) url.searchParams.append('y', year)
+  if (type) url.searchParams.append('type', type)
+
+  const response = await fetch(url.toString())
+
+  if (!response.ok) {
+    throw new Error(response.statusText)
+  }
+
+  const result = await (response.json() as Promise<ImdbResponse>)
+
+  if (result.Response === 'True') {
+    return result.Search
+  }
+
+  const errorMessage = result.Error || 'No error text received from server'
+  if (errorMessage === 'Movie not found!') {
+    return []
+  }
+
+  throw new Error(`Error from OMDB API: ${errorMessage}`)
+}
+
 export default function List() {
-  const [errorMessage, setErrorMessage] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
-  const [items, setItems] = useState<Array<ImdbData>>([]);
-  const [searchUrl, setSearchUrl] = useState('');
-
-  useEffect(() => {
-    if (!searchUrl) {
-      setIsLoaded(true);
-      setErrorMessage('');
-      setItems([]);
-      return;
-    }
-
-    fetch(searchUrl)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(response.statusText)
-        }
-        return response.json() as Promise<ImdbResponse>
-      })
-      .then(
-        (result) => {
-          console.log({result})
-          setIsLoaded(true);
-
-          if (result.Response === 'False') {
-            setErrorMessage(result.Error || 'Request ERROR');
-            setItems([]);
-          }
-          else {
-            setErrorMessage('');
-            setItems(result.Search);
-          }
-        },
-        // Note: it's important to handle errors here
-        // instead of a catch() block so that we don't swallow
-        // exceptions from actual bugs in components.
-        (error) => {
-          setIsLoaded(true);
-          setErrorMessage(error.message);
-          setItems([]);
-        }
-      )
-  }, [searchUrl])
-
   const [title, setTitle] = useState('');
   const [type, setType] = useState('');
   const [year, setYear] = useState('');
+  const [searchParams, setSearchParams] = useState({ title, type, year });
+  const [searchResults, setSearchResults] = useState<Array<ImdbData>>([]);
 
-  const buildSearchUrl = () => {
-    const trimmedTitle = title.trim()
+  useEffect(() => {
+    setIsLoaded(false);
 
-    if (!trimmedTitle) return ''
-
-    const url = new URL(omdbSearchUrl)
-    url.searchParams.append('apikey', omdbApiKey)
-    url.searchParams.append('s', trimmedTitle)
-
-    if (year) url.searchParams.append('y', year)
-    if (type) url.searchParams.append('type', type)
-
-    return url.toString()
-  }
+    (async () => {
+      const results = await search(searchParams)
+      setIsLoaded(true)
+      setSearchResults(results)
+    })()
+  }, [searchParams])
 
   return (
-    <div>
+    <>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault()
-          setSearchUrl(buildSearchUrl())
+          setSearchParams({ title, year, type })
         }}>
+
         <label>
-          Title:
+          Title
           <input
             type="text"
-            minLength={1}
+            minLength={3}
             onChange={(e) => setTitle(e.target.value)}
             required={true}
             value={title}
@@ -102,7 +98,7 @@ export default function List() {
         </label>
 
         <label>
-          Type:
+          Type
           <select value={type} onChange={(e) => setType(e.target.value)}>
             <option value="">Any</option>
             <option value="movie">Movie</option>
@@ -112,7 +108,7 @@ export default function List() {
         </label>
 
         <label>
-          Year:
+          Year
           <input
             type="number"
             max={(new Date()).getFullYear()}
@@ -129,13 +125,9 @@ export default function List() {
         <div>Loading...</div>
       )}
 
-      {errorMessage && (
-        <div>Error: {errorMessage}</div>
-      )}
-
       <table>
         <tbody>
-          {items.map(item => (
+          {searchResults.map(item => (
             <tr key={item.imdbID}>
               <td>
                 <img
@@ -150,6 +142,6 @@ export default function List() {
           ))}
         </tbody>
       </table>
-    </div>
+    </>
   );
 }
