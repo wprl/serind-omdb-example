@@ -10,25 +10,33 @@ interface ImdbData {
 }
 
 interface ImdbResponse {
+  Error?: string,
+  Response: string,
   Search: Array<ImdbData>
 }
 
 export default function List() {
+  const buildSearchUrl = () => {
+    const url = new URL(omdbSearchUrl)
+    url.search = new URLSearchParams({
+      apikey: omdbApiKey,
+      s: title
+      // year, type
+    }).toString()
+
+    return url.toString()
+  }
+
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState<Array<ImdbData>>([]);
+  const [title, setTitle] = useState('Monkey King');
+  const [type, setType] = useState('');
+  const [year, setYear] = useState('');
+  const [searchUrl, setSearchUrl] = useState(buildSearchUrl());
 
-  // Note: the empty deps array [] means
-  // this useEffect will run once
-  // similar to componentDidMount()
   useEffect(() => {
-    const searchUrl = new URL(omdbSearchUrl)
-    searchUrl.search = new URLSearchParams({
-      apikey: omdbApiKey,
-      s: 'Monkey King'
-    }).toString()
-
-    fetch(searchUrl.toString())
+    fetch(searchUrl)
       .then((response) => {
         if (!response.ok) {
           throw new Error(response.statusText)
@@ -39,7 +47,15 @@ export default function List() {
         (result) => {
           console.log({result})
           setIsLoaded(true);
-          setItems(result.Search);
+
+          if (result.Response === 'False') {
+            setErrorMessage(result.Error || 'Request ERROR');
+            setItems([]);
+          }
+          else {
+            setErrorMessage('');
+            setItems(result.Search);
+          }
         },
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
@@ -49,14 +65,49 @@ export default function List() {
           setErrorMessage(error.message);
         }
       )
-  }, [])
+  }, [searchUrl])
 
-  if (errorMessage) {
-    return <div>Error: {errorMessage}</div>;
-  } else if (!isLoaded) {
-    return <div>Loading...</div>;
-  } else {
-    return (
+  return (
+    <div>
+      <label>
+        Title:
+        <input
+          type="text"
+          onChange={(e) => setTitle(e.target.value)}
+          value={title}
+        />
+      </label>
+
+      <label>
+        Type:
+        <input
+          type="text"
+          onChange={(e) => setType(e.target.value)}
+          value={type}
+        />
+      </label>
+
+      <label>
+        Year:
+        <input
+          type="text"
+          onChange={(e) => setYear(e.target.value)}
+          value={year}
+        />
+      </label>
+
+      <button onClick={() => setSearchUrl(buildSearchUrl())}>
+        Search
+      </button>
+
+      {!isLoaded && (
+        <div>Loading...</div>
+      )}
+
+      {errorMessage && (
+        <div>Error: {errorMessage}</div>
+      )}
+
       <ul>
         {items.map(item => (
           <li key={item.imdbID}>
@@ -64,6 +115,6 @@ export default function List() {
           </li>
         ))}
       </ul>
-    );
-  }
+    </div>
+  );
 }
