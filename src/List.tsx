@@ -1,64 +1,5 @@
+import { search, SearchMovie } from './omdbClient'
 import React, { useEffect, useState } from 'react';
-
-const noPosterImageUrl = ''
-const omdbApiKey = 'c4de1ece'
-const omdbSearchUrl = `http://www.omdbapi.com/`
-
-interface ImdbData {
-  imdbID: string,
-  Poster: string,
-  Title: string,
-  Type: string,
-  Year: number
-}
-
-interface ImdbResponse {
-  Error?: string,
-  Response: string,
-  Search: Array<ImdbData>
-}
-
-interface SearchParameters {
-  title: string,
-  type: string,
-  year: string
-}
-
-
-const search = async (parameters: SearchParameters) => {
-  const {title, year, type} = parameters
-  const trimmedTitle = title.trim()
-
-  if (!trimmedTitle) {
-    return []
-  }
-
-  const url = new URL(omdbSearchUrl)
-  url.searchParams.append('apikey', omdbApiKey)
-  url.searchParams.append('s', trimmedTitle)
-
-  if (year) url.searchParams.append('y', year)
-  if (type) url.searchParams.append('type', type)
-
-  const response = await fetch(url.toString())
-
-  if (!response.ok) {
-    throw new Error(response.statusText)
-  }
-
-  const result = await (response.json() as Promise<ImdbResponse>)
-
-  if (result.Response === 'True') {
-    return result.Search
-  }
-
-  const errorMessage = result.Error || 'No error text received from server'
-  if (errorMessage === 'Movie not found!') {
-    return []
-  }
-
-  throw new Error(`Error from OMDB API: ${errorMessage}`)
-}
 
 export default function List() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -66,7 +7,7 @@ export default function List() {
   const [type, setType] = useState('');
   const [year, setYear] = useState('');
   const [searchParams, setSearchParams] = useState({ title, type, year });
-  const [searchResults, setSearchResults] = useState<Array<ImdbData>>([]);
+  const [searchResults, setSearchResults] = useState<Array<SearchMovie>>([]);
 
   useEffect(() => {
     setIsLoaded(false);
@@ -136,7 +77,7 @@ export default function List() {
                 <img
                   alt={'Poster image for ' + movie.Title}
                   width="100px"
-                  src={movie.Poster || noPosterImageUrl} />
+                  src={movie.Poster || ''} />
               </td>
               <td>{movie.Title}</td>
               <td>{movie.Type}</td>

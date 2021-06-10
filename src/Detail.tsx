@@ -1,52 +1,11 @@
+import { DetailMovie, loadDetails } from './omdbClient'
 import React, { useEffect, useState } from 'react';
-import { useParams } from "react-router-dom";
-
-const noPosterImageUrl = ''
-const omdbApiKey = 'c4de1ece'
-const omdbSearchUrl = `http://www.omdbapi.com/`
-
-interface DetailParams {
-  id: string
-}
-
-interface ImdbData {
-  imdbID?: string,
-  Poster?: string,
-  Title?: string,
-  Type?: string,
-  Year?: number,
-  Released?: number,
-  Genre?: string,
-  Ratings?: [ { Source: string, Value: string } ],
-  Error?: string,
-  Response: string,
-}
-
-const loadDetails = async (id: string) => {
-  const url = new URL(omdbSearchUrl)
-  url.searchParams.append('apikey', omdbApiKey)
-  url.searchParams.append('i', id)
-
-  const response = await fetch(url.toString())
-
-  if (!response.ok) {
-    throw new Error(response.statusText)
-  }
-
-  const movie = await (response.json() as Promise<ImdbData>)
-
-  if (movie.Response === 'True') {
-    return movie
-  }
-
-  const errorMessage = movie.Error || 'No error text received from server'
-  throw new Error(`Error from OMDB API: ${errorMessage}`)
-}
+import { useParams } from 'react-router-dom';
 
 export default function Detail() {
-  const { id } = useParams() as DetailParams
+  const { id } = useParams() as { id: string }
   const [isLoaded, setIsLoaded] = useState(false);
-  const [movie, setMovie] = useState<ImdbData | undefined>();
+  const [movie, setMovie] = useState<DetailMovie | undefined>();
 
   useEffect(() => {
     setIsLoaded(false);
@@ -68,7 +27,7 @@ export default function Detail() {
         <>
           <div><img
             alt={'Poster image for ' + movie.Title}
-            src={movie.Poster || noPosterImageUrl} /></div>
+            src={movie.Poster || ''} /></div>
           <div>{movie.Title}</div>
           <div>{movie.Type}</div>
           <div>{movie.Year}</div>
@@ -77,15 +36,11 @@ export default function Detail() {
         </>
       )}
 
-      {movie && movie.Ratings && (
-        <ul>
-          {movie.Ratings.map((rating) => (
-            <li key={rating.Source}>
-              {rating.Source}: {rating.Value}
-            </li>
-          ))}
-        </ul>
-      )}
+      {movie && movie.Ratings && movie.Ratings.map((rating) => (
+        <div key={rating.Source}>
+          {rating.Source}: {rating.Value}
+        </div>
+      ))}
     </>
   );
 }
