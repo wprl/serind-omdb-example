@@ -1,25 +1,25 @@
-import Detail from './Detail';
-import List from './List';
-import React from 'react';
-import { BrowserRouter, Switch, Route } from 'react-router-dom';
+import Detail from './Detail'
+import List from './List'
+import React from 'react'
+import { BrowserRouter, Switch, Route } from 'react-router-dom'
 
-import './App.css';
+import './App.css'
 
-function App() {
+function App (): React.ReactElement {
   return (
-    <div className="App">
+    <div className='App'>
       <BrowserRouter>
         <Switch>
-          <Route path="/movies/:id">
+          <Route path='/movies/:id'>
             <Detail />
           </Route>
-          <Route path="/">
+          <Route path='/'>
             <List />
           </Route>
         </Switch>
       </BrowserRouter>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

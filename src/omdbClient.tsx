@@ -1,44 +1,44 @@
 const omdbApiKey = 'c4de1ece'
-const omdbSearchUrl = `http://www.omdbapi.com/`
+const omdbSearchUrl = 'http://www.omdbapi.com/'
 
 export interface SearchMovie {
-  imdbID: string,
-  Poster: string,
-  Title: string,
-  Type: string,
+  imdbID: string
+  Poster: string
+  Title: string
+  Type: string
   Year: number
 }
 
 interface SearchResponse {
-  Error?: string,
-  Response: string,
-  Search: Array<SearchMovie>
+  Error?: string
+  Response: string
+  Search: SearchMovie[]
 }
 
 interface SearchParameters {
-  title: string,
-  type: string,
+  title: string
+  type: string
   year: string
 }
 
 export interface DetailMovie {
-  imdbID: string,
-  Poster: string,
-  Title: string,
-  Type: string,
-  Year: number,
-  Released: number,
-  Genre: string,
-  Ratings: [ { Source: string, Value: string } ],
-  Error?: string,
+  imdbID: string
+  Poster: string
+  Title: string
+  Type: string
+  Year: number
+  Released: number
+  Genre: string
+  Ratings: [ { Source: string, Value: string } ]
+  Error?: string
   Response: string
 }
 
-export const search = async (parameters: SearchParameters) => {
-  const {title, year, type} = parameters
+export const search = async (parameters: SearchParameters): Promise<SearchMovie[]> => {
+  const { title, year, type } = parameters
   const trimmedTitle = title.trim()
 
-  if (!trimmedTitle) {
+  if (trimmedTitle === '') {
     return []
   }
 
@@ -46,8 +46,8 @@ export const search = async (parameters: SearchParameters) => {
   url.searchParams.append('apikey', omdbApiKey)
   url.searchParams.append('s', trimmedTitle)
 
-  if (year) url.searchParams.append('y', year)
-  if (type) url.searchParams.append('type', type)
+  if (year !== '') url.searchParams.append('y', year)
+  if (type !== '') url.searchParams.append('type', type)
 
   const response = await fetch(url.toString())
 
@@ -61,7 +61,8 @@ export const search = async (parameters: SearchParameters) => {
     return result.Search
   }
 
-  const errorMessage = result.Error || 'No error text received from server'
+  const errorMessage = result.Error ?? 'No error text received from server'
+
   if (errorMessage === 'Movie not found!') {
     return []
   }
@@ -69,7 +70,7 @@ export const search = async (parameters: SearchParameters) => {
   throw new Error(`Error from OMDB API: ${errorMessage}`)
 }
 
-export const loadDetails = async (id: string) => {
+export const loadDetails = async (id: string): Promise<DetailMovie> => {
   const url = new URL(omdbSearchUrl)
   url.searchParams.append('apikey', omdbApiKey)
   url.searchParams.append('i', id)
@@ -86,6 +87,6 @@ export const loadDetails = async (id: string) => {
     return movie
   }
 
-  const errorMessage = movie.Error || 'No error text received from server'
+  const errorMessage = movie.Error ?? 'No error text received from server'
   throw new Error(`Error from OMDB API: ${errorMessage}`)
 }
