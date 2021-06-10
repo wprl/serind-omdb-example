@@ -127,17 +127,20 @@ export default function List() {
 
       <table>
         <tbody>
-          {searchResults.map(item => (
-            <tr key={item.imdbID}>
+          {searchResults.map(movie => (
+            <tr>
+              <td>
+                <a href={'/movies/' + movie.imdbID}>Details</a>
+              </td>
               <td>
                 <img
-                  alt={'Poster image for ' + item.Title}
+                  alt={'Poster image for ' + movie.Title}
                   width="100px"
-                  src={item.Poster || noPosterImageUrl} />
+                  src={movie.Poster || noPosterImageUrl} />
               </td>
-              <td>{item.Title}</td>
-              <td>{item.Type}</td>
-              <td>{item.Year}</td>
+              <td>{movie.Title}</td>
+              <td>{movie.Type}</td>
+              <td>{movie.Year}</td>
             </tr>
           ))}
         </tbody>
